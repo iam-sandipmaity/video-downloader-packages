@@ -27,12 +27,81 @@ ABI="arm64-v8a"
 TARGET_DIR="app/src/main/jniLibs/$ABI"
 mkdir -p "$TARGET_DIR"
 
+# Check and compile mbedtls locally if not present
+MBEDTLS_DIR="$(pwd)/mbedtls_install"
+if [ ! -d "mbedtls-source" ]; then
+    echo "Cloning mbedtls..."
+    git clone --depth 1 --branch v3.6.0 https://github.com/Mbed-TLS/mbedtls.git mbedtls-source
+fi
+
+if [ ! -d "$MBEDTLS_DIR" ]; then
+    echo "Compiling mbedtls..."
+    mkdir -p mbedtls-source/build
+    cd mbedtls-source/build
+    cmake -DCMAKE_TOOLCHAIN_FILE="$NDK_PATH/build/cmake/android.toolchain.cmake" \
+      -DANDROID_ABI="arm64-v8a" \
+      -DANDROID_PLATFORM="android-26" \
+      -DENABLE_PROGRAMS=OFF \
+      -DENABLE_TESTING=OFF \
+      -DUSE_SHARED_MBEDTLS_LIBRARY=OFF \
+      -DUSE_STATIC_MBEDTLS_LIBRARY=ON \
+      -DCMAKE_INSTALL_PREFIX="$MBEDTLS_DIR" \
+      ..
+    make -j$(nproc)
+    make install
+    cd ../..
+fi
+
 if [ ! -d "ffmpeg-source" ]; then
     echo "Cloning official FFmpeg source code (branch n7.0.1)..."
     git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
 fi
 
 echo "Compiling FFmpeg..."
+
+# Create pkgconfig files for local build
+mkdir -p pkgconfig
+cat << EOF > pkgconfig/mbedtls.pc
+prefix=$MBEDTLS_DIR
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: mbedtls
+Description: mbed TLS light-weight SSL/TLS library
+Version: 3.6.0
+Libs: -L\${libdir} -lmbedtls -lmbedx509 -lmbedcrypto
+Cflags: -I\${includedir}
+EOF
+
+cat << EOF > pkgconfig/mbedx509.pc
+prefix=$MBEDTLS_DIR
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: mbedx509
+Description: mbed TLS x509 library
+Version: 3.6.0
+Libs: -L\${libdir} -lmbedx509
+Cflags: -I\${includedir}
+EOF
+
+cat << EOF > pkgconfig/mbedcrypto.pc
+prefix=$MBEDTLS_DIR
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: mbedcrypto
+Description: mbed TLS crypto library
+Version: 3.6.0
+Libs: -L\${libdir} -lmbedcrypto
+Cflags: -I\${includedir}
+EOF
+
+export PKG_CONFIG_PATH="$(pwd)/pkgconfig"
+
 cd ffmpeg-source
 
 TOOLCHAIN="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64"
@@ -65,7 +134,19 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --disable-ffprobe \
   --disable-symver \
   --enable-gpl \
-  --enable-version3
+  --enable-version3 \
+  --disable-everything \
+  --enable-mbedtls \
+  --enable-protocol=file,http,https,tcp,udp,tls \
+  --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav \
+  --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2 \
+  --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg \
+  --enable-encoder=aac,opus,flac \
+  --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg \
+  --enable-filter=aformat,aresample,scale,crop,null \
+  --enable-asm \
+  --enable-neon \
+  --enable-lto
 
 make -j$(nproc)
 $STRIP ffmpeg

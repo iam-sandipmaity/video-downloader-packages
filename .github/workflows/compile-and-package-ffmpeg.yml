@@ -26,6 +26,27 @@ jobs:
         with:
           ndk-version: r26b
 
+      - name: Compile static mbedTLS
+        run: |
+          git clone --depth 1 --branch v3.6.0 https://github.com/Mbed-TLS/mbedtls.git mbedtls-source
+          cd mbedtls-source
+          mkdir build
+          cd build
+          
+          export NDK="${{ steps.setup-ndk.outputs.ndk-path }}"
+          
+          cmake -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI="arm64-v8a" \
+            -DANDROID_PLATFORM="android-26" \
+            -DENABLE_PROGRAMS=OFF \
+            -DENABLE_TESTING=OFF \
+            -DUSE_SHARED_MBEDTLS_LIBRARY=OFF \
+            -DUSE_STATIC_MBEDTLS_LIBRARY=ON \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mbedtls_install" \
+            ..
+          make -j$(nproc)
+          make install
+
       - name: Clone official FFmpeg Source
         run: |
           git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
@@ -48,6 +69,50 @@ jobs:
           export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
           export STRIP="$TOOLCHAIN/bin/llvm-strip"
           
+          # Create custom pkgconfig files for the target architectures
+          mkdir -p "${{ github.workspace }}/pkgconfig"
+          
+          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedtls.pc"
+prefix=${{ github.workspace }}/mbedtls_install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: mbedtls
+Description: mbed TLS light-weight SSL/TLS library
+Version: 3.6.0
+Libs: -L${libdir} -lmbedtls -lmbedx509 -lmbedcrypto
+Cflags: -I${includedir}
+EOF
+
+          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedx509.pc"
+prefix=${{ github.workspace }}/mbedtls_install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: mbedx509
+Description: mbed TLS x509 library
+Version: 3.6.0
+Libs: -L${libdir} -lmbedx509
+Cflags: -I${includedir}
+EOF
+
+          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedcrypto.pc"
+prefix=${{ github.workspace }}/mbedtls_install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: mbedcrypto
+Description: mbed TLS crypto library
+Version: 3.6.0
+Libs: -L${libdir} -lmbedcrypto
+Cflags: -I${includedir}
+EOF
+
+          export PKG_CONFIG_PATH="${{ github.workspace }}/pkgconfig"
+          
           ./configure \
             --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
             --sysroot="$TOOLCHAIN/sysroot" \
@@ -68,7 +133,19 @@ jobs:
             --disable-ffprobe \
             --disable-symver \
             --enable-gpl \
-            --enable-version3
+            --enable-version3 \
+            --disable-everything \
+            --enable-mbedtls \
+            --enable-protocol=file,http,https,tcp,udp,tls \
+            --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav \
+            --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2 \
+            --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg \
+            --enable-encoder=aac,opus,flac \
+            --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg \
+            --enable-filter=aformat,aresample,scale,crop,null \
+            --enable-asm \
+            --enable-neon \
+            --enable-lto
             
           make -j$(nproc)
           
