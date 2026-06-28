@@ -38,6 +38,8 @@ export AR="$TOOLCHAIN/bin/llvm-ar"
 export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
 export STRIP="$TOOLCHAIN/bin/llvm-strip"
 export READELF="$TOOLCHAIN/bin/llvm-readelf"
+export CFLAGS="-fPIC"
+export CXXFLAGS="-fPIC"
 
 # 1. Compile zlib statically
 if [ ! -d "zlib-source" ]; then
@@ -131,6 +133,8 @@ if [ ! -f "python-host/install/bin/python3" ]; then
     OLD_RANLIB="$RANLIB"
     OLD_STRIP="$STRIP"
     OLD_READELF="$READELF"
+    OLD_CFLAGS="$CFLAGS"
+    OLD_CXXFLAGS="$CXXFLAGS"
     OLD_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
     OLD_PKG_CONFIG="$PKG_CONFIG"
     OLD_CPPFLAGS="$CPPFLAGS"
@@ -138,7 +142,7 @@ if [ ! -f "python-host/install/bin/python3" ]; then
     OLD_LIBS="$LIBS"
     
     # Unset them so host python configure detects the host gcc/clang and native headers
-    unset CC CXX AR RANLIB STRIP READELF PKG_CONFIG_PATH PKG_CONFIG CPPFLAGS LDFLAGS LIBS
+    unset CC CXX AR RANLIB STRIP READELF CFLAGS CXXFLAGS PKG_CONFIG_PATH PKG_CONFIG CPPFLAGS LDFLAGS LIBS
     
     cd python-host
     ./configure --prefix="$(pwd)/install"
@@ -153,6 +157,8 @@ if [ ! -f "python-host/install/bin/python3" ]; then
     export RANLIB="$OLD_RANLIB"
     export STRIP="$OLD_STRIP"
     export READELF="$OLD_READELF"
+    export CFLAGS="$OLD_CFLAGS"
+    export CXXFLAGS="$OLD_CXXFLAGS"
     export PKG_CONFIG_PATH="$OLD_PKG_CONFIG_PATH"
     export PKG_CONFIG="$OLD_PKG_CONFIG"
     export CPPFLAGS="$OLD_CPPFLAGS"
@@ -187,10 +193,13 @@ if [ ! -f "$PREFIX_DIR/lib/libpython3.11.so" ]; then
       ac_cv_lib_crypt_crypt=no \
       ac_cv_buggy_getaddrinfo=no \
       CC="$CC" \
+      CXX="$CXX" \
       AR="$AR" \
       RANLIB="$RANLIB" \
       STRIP="$STRIP" \
       READELF="$READELF" \
+      CFLAGS="$CFLAGS" \
+      CXXFLAGS="$CXXFLAGS" \
       CPPFLAGS="$CPPFLAGS" \
       LDFLAGS="$LDFLAGS" \
       LIBS="$LIBS"
