@@ -148,7 +148,9 @@ jobs:
             --enable-filter=aformat,aresample,scale,crop,null \
             --enable-asm \
             --enable-neon \
-            --enable-lto
+            --enable-lto \
+            --extra-cflags="-I${{ github.workspace }}/mbedtls_install/include" \
+            --extra-ldflags="-L${{ github.workspace }}/mbedtls_install/lib"
             
           make -j$(nproc)
           

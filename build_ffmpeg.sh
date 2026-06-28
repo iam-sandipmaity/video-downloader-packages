@@ -151,7 +151,9 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --enable-filter=aformat,aresample,scale,crop,null \
   --enable-asm \
   --enable-neon \
-  --enable-lto
+  --enable-lto \
+  --extra-cflags="-I$MBEDTLS_DIR/include" \
+  --extra-ldflags="-L$MBEDTLS_DIR/lib"
 
 make -j$(nproc)
 $STRIP ffmpeg
