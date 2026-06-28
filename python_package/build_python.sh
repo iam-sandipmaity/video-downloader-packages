@@ -41,7 +41,7 @@ export STRIP="$TOOLCHAIN/bin/llvm-strip"
 # 1. Compile zlib statically
 if [ ! -d "zlib-source" ]; then
     echo "Downloading zlib..."
-    wget -q https://zlib.net/zlib-1.3.1.tar.gz
+    wget -q https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
     tar -xzf zlib-1.3.1.tar.gz
     mv zlib-1.3.1 zlib-source
     rm -f zlib-1.3.1.tar.gz
@@ -84,7 +84,7 @@ fi
 # 3. Compile OpenSSL statically
 if [ ! -d "openssl-source" ]; then
     echo "Downloading OpenSSL..."
-    wget -q https://github.com/openssl/openssl/releases/download/openssl-3.3.1/openssl-3.3.1.tar.gz
+    wget -q https://www.openssl.org/source/old/3.3/openssl-3.3.1.tar.gz
     tar -xzf openssl-3.3.1.tar.gz
     mv openssl-3.3.1 openssl-source
     rm -f openssl-3.3.1.tar.gz
