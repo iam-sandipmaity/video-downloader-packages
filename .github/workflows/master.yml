@@ -354,7 +354,90 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Run Python Build Script (Placeholder)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26b
+
+      - name: Install Host Build Dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev libffi-dev libbz2-dev libsqlite3-dev
+
+      - name: Compile Python and Dependencies
+        run: |
+          export ANDROID_NDK_HOME="${{ steps.setup-ndk.outputs.ndk-path }}"
           chmod +x build_python.sh
           ./build_python.sh
+
+      - name: Build Release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease
+          
+          # Rename raw unsigned APK
+          cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk
+
+      - name: Sign Android Release APK
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY || secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "=========================================================================="
+            echo "WARNING: SIGNING_KEY secret is not set in GitHub Repository Secrets."
+            echo "Skipping APK signing. The generated APK will be unsigned."
+            echo "=========================================================================="
+            cp app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk app/build/outputs/apk/release/python-signed-arm64-v8a.apk
+          else
+            echo "Decoding signing key..."
+            echo "$SIGNING_KEY" | base64 --decode > release.jks
+            
+            APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+            echo "Found apksigner at: $APKSIGNER"
+            
+            echo "Signing APK..."
+            $APKSIGNER sign --ks release.jks \
+              --ks-pass pass:"$KEYSTORE_PASSWORD" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass pass:"$KEY_PASSWORD" \
+              --out app/build/outputs/apk/release/python-signed-arm64-v8a.apk \
+              app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk
+              
+            echo "Verifying signed APK..."
+            $APKSIGNER verify app/build/outputs/apk/release/python-signed-arm64-v8a.apk
+            
+            echo "=== SHA-256 FINGERPRINT FOR Python Updates ==="
+            $APKSIGNER verify --print-certs app/build/outputs/apk/release/python-signed-arm64-v8a.apk | grep -i sha-256
+            echo "=============================================="
+            
+            rm -f release.jks
+          fi
+
+      - name: Upload Packaged APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-custom-package
+          path: |
+            python_package/app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk
+            python_package/app/build/outputs/apk/release/python-signed-arm64-v8a.apk
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/python-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            python_package/app/build/outputs/apk/release/python-signed-arm64-v8a.apk
+            python_package/app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
