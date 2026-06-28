@@ -2,7 +2,7 @@
 
 This workspace allows you to build, compile, and package your own custom FFmpeg binaries for the Video Downloader Android app from the official FFmpeg source code.
 
-This build is configured with **FFmpeg 7.1.1** (matching the competitor's engine version) and optimized down to a minimal binary size (~7-8MB uncompressed, ~3MB in ZIP) by disabling unused codecs while selectively integrating critical modern features.
+This build is configured with **FFmpeg 7.1.1** and optimized down to a minimal binary size (~7-8MB uncompressed, ~3MB in ZIP) by disabling unused codecs while selectively integrating critical modern features.
 
 ---
 
