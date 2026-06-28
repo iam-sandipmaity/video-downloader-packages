@@ -26,6 +26,8 @@ on:
       - 'v*'
 
 env:
+  ENABLE_FFMPEG: 'false'        # Disable FFmpeg build job completely
+  ENABLE_PYTHON: 'true'         # Enable Python build job
   ENABLE_TAG_RELEASES: 'true'   # Set to 'false' to disable tag-triggered builds
   ENABLE_PUSH_BUILDS: 'true'     # Set to 'false' to disable push-triggered test builds on main
 
@@ -36,6 +38,8 @@ jobs:
     outputs:
       ffmpeg: ${{ steps.filter.outputs.ffmpeg }}
       python: ${{ steps.filter.outputs.python }}
+      enable_ffmpeg: ${{ steps.config.outputs.enable_ffmpeg }}
+      enable_python: ${{ steps.config.outputs.enable_python }}
       enable_tag_releases: ${{ steps.config.outputs.enable_tag_releases }}
       enable_push_builds: ${{ steps.config.outputs.enable_push_builds }}
     steps:
@@ -55,6 +59,8 @@ jobs:
       - name: Forward Configuration
         id: config
         run: |
+          echo "enable_ffmpeg=${{ env.ENABLE_FFMPEG }}" >> $GITHUB_OUTPUT
+          echo "enable_python=${{ env.ENABLE_PYTHON }}" >> $GITHUB_OUTPUT
           echo "enable_tag_releases=${{ env.ENABLE_TAG_RELEASES }}" >> $GITHUB_OUTPUT
           echo "enable_push_builds=${{ env.ENABLE_PUSH_BUILDS }}" >> $GITHUB_OUTPUT
 
@@ -62,9 +68,11 @@ jobs:
     name: Build FFmpeg Package
     needs: check
     if: |
-      (github.event_name == 'workflow_dispatch' && inputs.build_ffmpeg) ||
-      (needs.check.outputs.enable_tag_releases == 'true' && (startsWith(github.ref, 'refs/tags/ffmpeg-v') || startsWith(github.ref, 'refs/tags/v'))) ||
-      (needs.check.outputs.enable_push_builds == 'true' && github.event_name == 'push' && needs.check.outputs.ffmpeg == 'true')
+      needs.check.outputs.enable_ffmpeg == 'true' && (
+        (github.event_name == 'workflow_dispatch' && inputs.build_ffmpeg) ||
+        (needs.check.outputs.enable_tag_releases == 'true' && (startsWith(github.ref, 'refs/tags/ffmpeg-v') || startsWith(github.ref, 'refs/tags/v'))) ||
+        (needs.check.outputs.enable_push_builds == 'true' && github.event_name == 'push' && needs.check.outputs.ffmpeg == 'true')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -372,9 +380,11 @@ jobs:
     name: Build Python Package
     needs: check
     if: |
-      (github.event_name == 'workflow_dispatch' && inputs.build_python) ||
-      (needs.check.outputs.enable_tag_releases == 'true' && startsWith(github.ref, 'refs/tags/python-v')) ||
-      (needs.check.outputs.enable_push_builds == 'true' && github.event_name == 'push' && needs.check.outputs.python == 'true')
+      needs.check.outputs.enable_python == 'true' && (
+        (github.event_name == 'workflow_dispatch' && inputs.build_python) ||
+        (needs.check.outputs.enable_tag_releases == 'true' && startsWith(github.ref, 'refs/tags/python-v')) ||
+        (needs.check.outputs.enable_push_builds == 'true' && github.event_name == 'push' && needs.check.outputs.python == 'true')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write

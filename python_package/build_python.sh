@@ -122,11 +122,39 @@ if [ ! -f "python-host/install/bin/python3" ]; then
     echo "Building native Host Python..."
     mkdir -p python-host
     cp -R python-source/* python-host/ || true
+    
+    # Save the target compiler variables to prevent host build pollution
+    OLD_CC="$CC"
+    OLD_CXX="$CXX"
+    OLD_AR="$AR"
+    OLD_RANLIB="$RANLIB"
+    OLD_STRIP="$STRIP"
+    OLD_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+    OLD_PKG_CONFIG="$PKG_CONFIG"
+    OLD_CPPFLAGS="$CPPFLAGS"
+    OLD_LDFLAGS="$LDFLAGS"
+    OLD_LIBS="$LIBS"
+    
+    # Unset them so host python configure detects the host gcc/clang and native headers
+    unset CC CXX AR RANLIB STRIP PKG_CONFIG_PATH PKG_CONFIG CPPFLAGS LDFLAGS LIBS
+    
     cd python-host
     ./configure --prefix="$(pwd)/install"
     make -j$(nproc)
     make install
     cd ..
+    
+    # Restore the target compiler variables
+    export CC="$OLD_CC"
+    export CXX="$OLD_CXX"
+    export AR="$OLD_AR"
+    export RANLIB="$OLD_RANLIB"
+    export STRIP="$OLD_STRIP"
+    export PKG_CONFIG_PATH="$OLD_PKG_CONFIG_PATH"
+    export PKG_CONFIG="$OLD_PKG_CONFIG"
+    export CPPFLAGS="$OLD_CPPFLAGS"
+    export LDFLAGS="$OLD_LDFLAGS"
+    export LIBS="$OLD_LIBS"
 fi
 
 # 6. Cross-Compile Target Python for Android arm64-v8a
