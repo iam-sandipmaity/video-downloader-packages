@@ -248,6 +248,9 @@ jobs:
           
           chmod +x gradlew
           ./gradlew :app:assembleRelease
+          
+          # Rename raw unsigned APK
+          cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/ffmpeg-unsigned-arm64-v8a.apk
 
       - name: Sign Android Release APK
         env:
@@ -261,7 +264,7 @@ jobs:
             echo "WARNING: SIGNING_KEY secret is not set in GitHub Repository Secrets."
             echo "Skipping APK signing. The generated APK will be unsigned."
             echo "=========================================================================="
-            cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-signed.apk
+            cp app/build/outputs/apk/release/ffmpeg-unsigned-arm64-v8a.apk app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk
           else
             echo "Decoding signing key..."
             echo "$SIGNING_KEY" | base64 --decode > release.jks
@@ -274,14 +277,14 @@ jobs:
               --ks-pass pass:"$KEYSTORE_PASSWORD" \
               --ks-key-alias "$KEY_ALIAS" \
               --key-pass pass:"$KEY_PASSWORD" \
-              --out app/build/outputs/apk/release/app-release-signed.apk \
-              app/build/outputs/apk/release/app-release-unsigned.apk
+              --out app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk \
+              app/build/outputs/apk/release/ffmpeg-unsigned-arm64-v8a.apk
               
             echo "Verifying signed APK..."
-            $APKSIGNER verify app/build/outputs/apk/release/app-release-signed.apk
+            $APKSIGNER verify app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk
             
             echo "=== SHA-256 FINGERPRINT FOR FfmpegUpdateManager.kt ==="
-            $APKSIGNER verify --print-certs app/build/outputs/apk/release/app-release-signed.apk | grep -i sha-256
+            $APKSIGNER verify --print-certs app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk | grep -i sha-256
             echo "======================================================"
             
             rm -f release.jks
@@ -292,16 +295,16 @@ jobs:
         with:
           name: ffmpeg-custom-package
           path: |
-            app/build/outputs/apk/release/app-release-unsigned.apk
-            app/build/outputs/apk/release/app-release-signed.apk
+            app/build/outputs/apk/release/ffmpeg-unsigned-arm64-v8a.apk
+            app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app/build/outputs/apk/release/app-release-signed.apk
-            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/apk/release/ffmpeg-signed-arm64-v8a.apk
+            app/build/outputs/apk/release/ffmpeg-unsigned-arm64-v8a.apk
           generate_release_notes: true
           draft: false
           prerelease: false
