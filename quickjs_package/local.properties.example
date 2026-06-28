@@ -1,0 +1,9 @@
+# Android SDK & NDK Location Configuration
+# Copy this file to 'local.properties' and set the correct paths to compile locally.
+
+# Path to the Android SDK
+sdk.dir=/path/to/android-sdk
+
+# Path to the Android NDK (required for compiling FFmpeg)
+ndk.dir=/path/to/android-sdk/ndk/26.1.10909125
+# Alternatively, set the environment variable ANDROID_NDK_HOME

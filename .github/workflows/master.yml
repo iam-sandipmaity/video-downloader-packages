@@ -13,21 +13,29 @@ on:
         required: true
         type: boolean
         default: false
+      build_quickjs:
+        description: 'Build QuickJS Package'
+        required: true
+        type: boolean
+        default: true
   push:
     branches:
       - main
     paths:
       - 'ffmpeg_package/**'
       - 'python_package/**'
+      - 'quickjs_package/**'
       - '.github/workflows/master.yml'
     tags:
       - 'ffmpeg-v*'
       - 'python-v*'
+      - 'quickjs-v*'
       - 'v*'
 
 env:
   ENABLE_FFMPEG: 'false'        # Disable FFmpeg build job completely
   ENABLE_PYTHON: 'true'         # Enable Python build job
+  ENABLE_QUICKJS: 'true'        # Enable QuickJS build job
   ENABLE_TAG_RELEASES: 'true'   # Set to 'false' to disable tag-triggered builds
   ENABLE_PUSH_BUILDS: 'true'     # Set to 'false' to disable push-triggered test builds on main
 
@@ -38,8 +46,10 @@ jobs:
     outputs:
       ffmpeg: ${{ steps.filter.outputs.ffmpeg }}
       python: ${{ steps.filter.outputs.python }}
+      quickjs: ${{ steps.filter.outputs.quickjs }}
       enable_ffmpeg: ${{ steps.config.outputs.enable_ffmpeg }}
       enable_python: ${{ steps.config.outputs.enable_python }}
+      enable_quickjs: ${{ steps.config.outputs.enable_quickjs }}
       enable_tag_releases: ${{ steps.config.outputs.enable_tag_releases }}
       enable_push_builds: ${{ steps.config.outputs.enable_push_builds }}
     steps:
@@ -56,11 +66,15 @@ jobs:
             python:
               - 'python_package/**'
               - '.github/workflows/master.yml'
+            quickjs:
+              - 'quickjs_package/**'
+              - '.github/workflows/master.yml'
       - name: Forward Configuration
         id: config
         run: |
           echo "enable_ffmpeg=${{ env.ENABLE_FFMPEG }}" >> $GITHUB_OUTPUT
           echo "enable_python=${{ env.ENABLE_PYTHON }}" >> $GITHUB_OUTPUT
+          echo "enable_quickjs=${{ env.ENABLE_QUICKJS }}" >> $GITHUB_OUTPUT
           echo "enable_tag_releases=${{ env.ENABLE_TAG_RELEASES }}" >> $GITHUB_OUTPUT
           echo "enable_push_builds=${{ env.ENABLE_PUSH_BUILDS }}" >> $GITHUB_OUTPUT
 
@@ -481,6 +495,110 @@ jobs:
           files: |
             python_package/app/build/outputs/apk/release/python-signed-arm64-v8a.apk
             python_package/app/build/outputs/apk/release/python-unsigned-arm64-v8a.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  build-quickjs:
+    name: Build QuickJS Package
+    needs: check
+    if: |
+      needs.check.outputs.enable_quickjs == 'true' && (
+        (github.event_name == 'workflow_dispatch' && inputs.build_quickjs) ||
+        (needs.check.outputs.enable_tag_releases == 'true' && startsWith(github.ref, 'refs/tags/quickjs-v')) ||
+        (needs.check.outputs.enable_push_builds == 'true' && github.event_name == 'push' && needs.check.outputs.quickjs == 'true')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    defaults:
+      run:
+        working-directory: quickjs_package
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26b
+
+      - name: Compile QuickJS
+        run: |
+          export ANDROID_NDK_HOME="${{ steps.setup-ndk.outputs.ndk-path }}"
+          chmod +x build_quickjs.sh
+          ./build_quickjs.sh
+
+      - name: Build Release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease
+          
+          # Rename raw unsigned APK
+          cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/quickjs-unsigned-arm64-v8a.apk
+
+      - name: Sign Android Release APK
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY || secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "=========================================================================="
+            echo "WARNING: SIGNING_KEY secret is not set in GitHub Repository Secrets."
+            echo "Skipping APK signing. The generated APK will be unsigned."
+            echo "=========================================================================="
+            cp app/build/outputs/apk/release/quickjs-unsigned-arm64-v8a.apk app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk
+          else
+            echo "Decoding signing key..."
+            echo "$SIGNING_KEY" | base64 --decode > release.jks
+            
+            APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+            echo "Found apksigner at: $APKSIGNER"
+            
+            echo "Signing APK..."
+            $APKSIGNER sign --ks release.jks \
+              --ks-pass pass:"$KEYSTORE_PASSWORD" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass pass:"$KEY_PASSWORD" \
+              --out app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk \
+              app/build/outputs/apk/release/quickjs-unsigned-arm64-v8a.apk
+              
+            echo "Verifying signed APK..."
+            $APKSIGNER verify app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk
+            
+            echo "=== SHA-256 FINGERPRINT FOR QuickJS Updates ==="
+            $APKSIGNER verify --print-certs app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk | grep -i sha-256
+            echo "=============================================="
+            
+            rm -f release.jks
+          fi
+
+      - name: Upload Packaged APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: quickjs-custom-package
+          path: |
+            quickjs_package/app/build/outputs/apk/release/quickjs-unsigned-arm64-v8a.apk
+            quickjs_package/app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/quickjs-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            quickjs_package/app/build/outputs/apk/release/quickjs-signed-arm64-v8a.apk
+            quickjs_package/app/build/outputs/apk/release/quickjs-unsigned-arm64-v8a.apk
           generate_release_notes: true
           draft: false
           prerelease: false
