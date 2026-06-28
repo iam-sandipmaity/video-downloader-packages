@@ -33,7 +33,7 @@ on:
       - 'v*'
 
 env:
-  ENABLE_FFMPEG: 'false'        # Disable FFmpeg build job completely
+  ENABLE_FFMPEG: 'true'         # Enable FFmpeg build job
   ENABLE_PYTHON: 'true'         # Enable Python build job
   ENABLE_QUICKJS: 'true'        # Enable QuickJS build job
   ENABLE_TAG_RELEASES: 'true'   # Set to 'false' to disable tag-triggered builds
