@@ -48,6 +48,65 @@ jobs:
           make -j$(nproc)
           make install
 
+      - name: Compile static libx264
+        run: |
+          git clone --depth 1 https://code.videolan.org/videolan/x264.git x264-source
+          cd x264-source
+          
+          export NDK="${{ steps.setup-ndk.outputs.ndk-path }}"
+          export TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
+          export TARGET="aarch64-linux-android"
+          export API="26"
+          
+          export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
+          export AR="$TOOLCHAIN/bin/llvm-ar"
+          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+          export NM="$TOOLCHAIN/bin/llvm-nm"
+          export STRIP="$TOOLCHAIN/bin/llvm-strip"
+          
+          ./configure \
+            --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
+            --sysroot="$TOOLCHAIN/sysroot" \
+            --host=aarch64-linux-android \
+            --enable-static \
+            --disable-cli \
+            --enable-pic \
+            --prefix="${{ github.workspace }}/x264_install"
+            
+          make -j$(nproc)
+          make install
+
+      - name: Compile static libmp3lame
+        run: |
+          wget https://deb.debian.org/debian/pool/main/l/lame/lame_3.100.orig.tar.gz
+          tar -xzf lame_3.100.orig.tar.gz
+          cd lame-3.100
+          
+          # Fix type compatibility issue in LAME source with modern compilers
+          find . -type f -exec sed -i 's/ieee754_float32_t/float/g' {} +
+          
+          export NDK="${{ steps.setup-ndk.outputs.ndk-path }}"
+          export TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
+          export TARGET="aarch64-linux-android"
+          export API="26"
+          
+          export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
+          export AR="$TOOLCHAIN/bin/llvm-ar"
+          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+          
+          ./configure \
+            --host=aarch64-linux-android \
+            --enable-static \
+            --disable-shared \
+            --disable-frontend \
+            --prefix="${{ github.workspace }}/lame_install" \
+            CC="$CC --sysroot=$TOOLCHAIN/sysroot" \
+            AR="$AR" \
+            RANLIB="$RANLIB"
+            
+          make -j$(nproc)
+          make install
+
       - name: Clone official FFmpeg Source
         run: |
           git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
@@ -113,7 +172,7 @@ jobs:
           Cflags: -I${includedir}
           EOF
 
-          export PKG_CONFIG_PATH="${{ github.workspace }}/pkgconfig"
+          export PKG_CONFIG_PATH="${{ github.workspace }}/x264_install/lib/pkgconfig:${{ github.workspace }}/pkgconfig"
           
           ./configure \
             --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
@@ -139,18 +198,20 @@ jobs:
             --enable-version3 \
             --disable-everything \
             --enable-mbedtls \
+            --enable-libx264 \
+            --enable-libmp3lame \
             --enable-protocol=file,http,https,tcp,udp,tls \
             --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav \
             --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2 \
             --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg \
-            --enable-encoder=aac,opus,flac \
+            --enable-encoder=libx264,libmp3lame,aac,opus,flac \
             --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg \
-            --enable-filter=aformat,aresample,scale,crop,null \
+            --enable-filter=aformat,aresample,scale,crop,null,trim,atrim \
             --enable-asm \
             --enable-neon \
             --enable-lto \
-            --extra-cflags="-I${{ github.workspace }}/mbedtls_install/include" \
-            --extra-ldflags="-L${{ github.workspace }}/mbedtls_install/lib"
+            --extra-cflags="-I${{ github.workspace }}/mbedtls_install/include -I${{ github.workspace }}/x264_install/include -I${{ github.workspace }}/lame_install/include" \
+            --extra-ldflags="-L${{ github.workspace }}/mbedtls_install/lib -L${{ github.workspace }}/x264_install/lib -L${{ github.workspace }}/lame_install/lib"
             
           make -j$(nproc)
           

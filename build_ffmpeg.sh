@@ -55,6 +55,79 @@ if [ ! -d "$MBEDTLS_DIR" ]; then
     cd ../..
 fi
 
+# Check and compile x264 locally if not present
+X264_DIR="$(pwd)/x264_install"
+if [ ! -d "x264-source" ]; then
+    echo "Cloning x264..."
+    git clone --depth 1 https://code.videolan.org/videolan/x264.git x264-source
+fi
+
+if [ ! -d "$X264_DIR" ]; then
+    echo "Compiling x264..."
+    cd x264-source
+    
+    TOOLCHAIN="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64"
+    TARGET="aarch64-linux-android"
+    API="26"
+    
+    CC="$TOOLCHAIN/bin/$TARGET$API-clang"
+    AR="$TOOLCHAIN/bin/llvm-ar"
+    RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+    NM="$TOOLCHAIN/bin/llvm-nm"
+    STRIP="$TOOLCHAIN/bin/llvm-strip"
+    
+    ./configure \
+      --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
+      --sysroot="$TOOLCHAIN/sysroot" \
+      --host=aarch64-linux-android \
+      --enable-static \
+      --disable-cli \
+      --enable-pic \
+      --prefix="$X264_DIR"
+      
+    make -j$(nproc)
+    make install
+    cd ..
+fi
+
+# Check and compile libmp3lame locally if not present
+LAME_DIR="$(pwd)/lame_install"
+if [ ! -d "lame-3.100" ]; then
+    echo "Downloading and extracting lame..."
+    wget https://deb.debian.org/debian/pool/main/l/lame/lame_3.100.orig.tar.gz
+    tar -xzf lame_3.100.orig.tar.gz
+    cd lame-3.100
+    find . -type f -exec sed -i 's/ieee754_float32_t/float/g' {} +
+    cd ..
+fi
+
+if [ ! -d "$LAME_DIR" ]; then
+    echo "Compiling lame..."
+    cd lame-3.100
+    
+    TOOLCHAIN="$NDK_PATH/toolchains/llvm/prebuilt/linux-x86_64"
+    TARGET="aarch64-linux-android"
+    API="26"
+    
+    CC="$TOOLCHAIN/bin/$TARGET$API-clang"
+    AR="$TOOLCHAIN/bin/llvm-ar"
+    RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+    
+    ./configure \
+      --host=aarch64-linux-android \
+      --enable-static \
+      --disable-shared \
+      --disable-frontend \
+      --prefix="$LAME_DIR" \
+      CC="$CC --sysroot=$TOOLCHAIN/sysroot" \
+      AR="$AR" \
+      RANLIB="$RANLIB"
+      
+    make -j$(nproc)
+    make install
+    cd ..
+fi
+
 if [ ! -d "ffmpeg-source" ]; then
     echo "Cloning official FFmpeg source code (branch n7.0.1)..."
     git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
@@ -103,7 +176,7 @@ Libs: -L\${libdir} -lmbedcrypto
 Cflags: -I\${includedir}
 EOF
 
-export PKG_CONFIG_PATH="$(pwd)/pkgconfig"
+export PKG_CONFIG_PATH="$X264_DIR/lib/pkgconfig:$(pwd)/pkgconfig"
 
 cd ffmpeg-source
 
@@ -142,18 +215,20 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --enable-version3 \
   --disable-everything \
   --enable-mbedtls \
+  --enable-libx264 \
+  --enable-libmp3lame \
   --enable-protocol=file,http,https,tcp,udp,tls \
   --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav \
   --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2 \
   --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg \
-  --enable-encoder=aac,opus,flac \
+  --enable-encoder=libx264,libmp3lame,aac,opus,flac \
   --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg \
-  --enable-filter=aformat,aresample,scale,crop,null \
+  --enable-filter=aformat,aresample,scale,crop,null,trim,atrim \
   --enable-asm \
   --enable-neon \
   --enable-lto \
-  --extra-cflags="-I$MBEDTLS_DIR/include" \
-  --extra-ldflags="-L$MBEDTLS_DIR/lib"
+  --extra-cflags="-I$MBEDTLS_DIR/include -I$X264_DIR/include -I$LAME_DIR/include" \
+  --extra-ldflags="-L$MBEDTLS_DIR/lib -L$X264_DIR/lib -L$LAME_DIR/lib"
 
 make -j$(nproc)
 $STRIP ffmpeg
