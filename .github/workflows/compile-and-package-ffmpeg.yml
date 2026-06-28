@@ -161,6 +161,15 @@ jobs:
           # Strip symbols to minimize size
           $STRIP ffmpeg
 
+      - name: Print Configure Log on Failure
+        if: failure()
+        run: |
+          if [ -f ffmpeg-source/ffbuild/config.log ]; then
+            tail -n 300 ffmpeg-source/ffbuild/config.log
+          else
+            echo "config.log not found"
+          fi
+
       - name: Move Binary and Package APK
         run: |
           mkdir -p app/src/main/jniLibs/arm64-v8a
