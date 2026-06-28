@@ -206,6 +206,8 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --ranlib="$RANLIB" \
   --strip="$STRIP" \
   --enable-cross-compile \
+  --pkg-config="pkg-config" \
+  --pkg-config-flags="--static" \
   --enable-static \
   --disable-shared \
   --disable-doc \
