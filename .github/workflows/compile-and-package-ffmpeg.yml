@@ -72,44 +72,44 @@ jobs:
           # Create custom pkgconfig files for the target architectures
           mkdir -p "${{ github.workspace }}/pkgconfig"
           
-          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedtls.pc"
-prefix=${{ github.workspace }}/mbedtls_install
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+          cat << 'EOF' | sed 's/^[[:space:]]*//' > "${{ github.workspace }}/pkgconfig/mbedtls.pc"
+          prefix=${{ github.workspace }}/mbedtls_install
+          exec_prefix=${prefix}
+          libdir=${exec_prefix}/lib
+          includedir=${prefix}/include
 
-Name: mbedtls
-Description: mbed TLS light-weight SSL/TLS library
-Version: 3.6.0
-Libs: -L${libdir} -lmbedtls -lmbedx509 -lmbedcrypto
-Cflags: -I${includedir}
-EOF
+          Name: mbedtls
+          Description: mbed TLS light-weight SSL/TLS library
+          Version: 3.6.0
+          Libs: -L${libdir} -lmbedtls -lmbedx509 -lmbedcrypto
+          Cflags: -I${includedir}
+          EOF
 
-          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedx509.pc"
-prefix=${{ github.workspace }}/mbedtls_install
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+          cat << 'EOF' | sed 's/^[[:space:]]*//' > "${{ github.workspace }}/pkgconfig/mbedx509.pc"
+          prefix=${{ github.workspace }}/mbedtls_install
+          exec_prefix=${prefix}
+          libdir=${exec_prefix}/lib
+          includedir=${prefix}/include
 
-Name: mbedx509
-Description: mbed TLS x509 library
-Version: 3.6.0
-Libs: -L${libdir} -lmbedx509
-Cflags: -I${includedir}
-EOF
+          Name: mbedx509
+          Description: mbed TLS x509 library
+          Version: 3.6.0
+          Libs: -L${libdir} -lmbedx509
+          Cflags: -I${includedir}
+          EOF
 
-          cat << 'EOF' > "${{ github.workspace }}/pkgconfig/mbedcrypto.pc"
-prefix=${{ github.workspace }}/mbedtls_install
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+          cat << 'EOF' | sed 's/^[[:space:]]*//' > "${{ github.workspace }}/pkgconfig/mbedcrypto.pc"
+          prefix=${{ github.workspace }}/mbedtls_install
+          exec_prefix=${prefix}
+          libdir=${exec_prefix}/lib
+          includedir=${prefix}/include
 
-Name: mbedcrypto
-Description: mbed TLS crypto library
-Version: 3.6.0
-Libs: -L${libdir} -lmbedcrypto
-Cflags: -I${includedir}
-EOF
+          Name: mbedcrypto
+          Description: mbed TLS crypto library
+          Version: 3.6.0
+          Libs: -L${libdir} -lmbedcrypto
+          Cflags: -I${includedir}
+          EOF
 
           export PKG_CONFIG_PATH="${{ github.workspace }}/pkgconfig"
           
