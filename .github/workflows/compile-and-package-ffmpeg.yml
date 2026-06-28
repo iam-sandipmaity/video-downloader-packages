@@ -245,8 +245,48 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleRelease
 
+      - name: Sign Android Release APK
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "=========================================================================="
+            echo "WARNING: SIGNING_KEY secret is not set in GitHub Repository Secrets."
+            echo "Skipping APK signing. The generated APK will be unsigned."
+            echo "=========================================================================="
+            cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-signed.apk
+          else
+            echo "Decoding signing key..."
+            echo "$SIGNING_KEY" | base64 --decode > release.jks
+            
+            APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+            echo "Found apksigner at: $APKSIGNER"
+            
+            echo "Signing APK..."
+            $APKSIGNER sign --ks release.jks \
+              --ks-pass pass:"$KEYSTORE_PASSWORD" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass pass:"$KEY_PASSWORD" \
+              --out app/build/outputs/apk/release/app-release-signed.apk \
+              app/build/outputs/apk/release/app-release-unsigned.apk
+              
+            echo "Verifying signed APK..."
+            $APKSIGNER verify app/build/outputs/apk/release/app-release-signed.apk
+            
+            echo "=== SHA-256 FINGERPRINT FOR FfmpegUpdateManager.kt ==="
+            $APKSIGNER verify --print-certs app/build/outputs/apk/release/app-release-signed.apk | grep -i sha-256
+            echo "======================================================"
+            
+            rm -f release.jks
+          fi
+
       - name: Upload Packaged APK
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-custom-package
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/apk/release/app-release-signed.apk
