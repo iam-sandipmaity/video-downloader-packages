@@ -27,6 +27,7 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+            keepDebugSymbols.add("**/libffmpeg.so")
         }
     }
 }
