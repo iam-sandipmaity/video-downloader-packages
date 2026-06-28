@@ -223,10 +223,10 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --enable-libmp3lame \
   --enable-protocol=file,http,https,tcp,udp,tls,crypto,data \
   --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav,image2,ass,srt,webvtt,subrip,flv,dash \
-  --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2,ass,srt,webvtt,mov_text,ipod \
+  --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2,ass,srt,webvtt,subrip,flv,dash,mov_text,ipod \
   --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg,webp,ass,srt,webvtt,subrip,mov_text,pcm_s16le \
-  --enable-encoder=libx264,libmp3lame,aac,opus,flac,png,mjpeg,ass,srt,webvtt,mov_text,pcm_s16le,vorbis \
-  --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg,webp \
+  --enable-encoder=libx264,libmp3lame,aac,opus,flac,png,mjpeg,webp,ass,srt,webvtt,subrip,mov_text,pcm_s16le,vorbis \
+  --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg,webp,ass,srt,webvtt \
   --enable-filter=aformat,aresample,scale,crop,null,trim,atrim,pan,volume \
   --enable-asm \
   --enable-neon \
