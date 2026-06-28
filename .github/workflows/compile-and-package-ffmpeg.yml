@@ -21,7 +21,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Android NDK
-        uses: nndsd/setup-android-ndk@v1.0.0
+        uses: nttld/setup-ndk@v1
         id: setup-ndk
         with:
           ndk-version: r26b
