@@ -67,6 +67,7 @@ jobs:
           export AS="$CC"
           export CXX="$TOOLCHAIN/bin/$TARGET$API-clang++"
           export LD="$TOOLCHAIN/bin/ld.lld"
+          export NM="$TOOLCHAIN/bin/llvm-nm"
           export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
           export STRIP="$TOOLCHAIN/bin/llvm-strip"
           
@@ -123,6 +124,7 @@ jobs:
             --cc="$CC" \
             --as="$AS" \
             --ar="$AR" \
+            --nm="$NM" \
             --ranlib="$RANLIB" \
             --strip="$STRIP" \
             --enable-cross-compile \

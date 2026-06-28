@@ -114,6 +114,7 @@ API="26"
 CC="$TOOLCHAIN/bin/${TARGET}${API}-clang"
 AS="$CC"
 AR="$TOOLCHAIN/bin/llvm-ar"
+NM="$TOOLCHAIN/bin/llvm-nm"
 RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
 STRIP="$TOOLCHAIN/bin/llvm-strip"
 
@@ -126,6 +127,7 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --cc="$CC" \
   --as="$AS" \
   --ar="$AR" \
+  --nm="$NM" \
   --ranlib="$RANLIB" \
   --strip="$STRIP" \
   --enable-cross-compile \
