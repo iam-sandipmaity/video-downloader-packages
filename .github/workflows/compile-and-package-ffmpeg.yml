@@ -115,7 +115,7 @@ jobs:
 
       - name: Clone official FFmpeg Source
         run: |
-          git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
+          git clone --depth 1 --branch n7.1.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
 
       - name: Compile Standalone FFmpeg Binary
         run: |

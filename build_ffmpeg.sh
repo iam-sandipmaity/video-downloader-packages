@@ -131,8 +131,8 @@ if [ ! -d "$LAME_DIR" ]; then
 fi
 
 if [ ! -d "ffmpeg-source" ]; then
-    echo "Cloning official FFmpeg source code (branch n7.0.1)..."
-    git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
+    echo "Cloning official FFmpeg source code (branch n7.1.1)..."
+    git clone --depth 1 --branch n7.1.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
 fi
 
 echo "Compiling FFmpeg..."
