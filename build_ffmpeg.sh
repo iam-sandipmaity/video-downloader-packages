@@ -75,6 +75,8 @@ if [ ! -d "$X264_DIR" ]; then
     RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
     NM="$TOOLCHAIN/bin/llvm-nm"
     STRIP="$TOOLCHAIN/bin/llvm-strip"
+    export STRINGS="$TOOLCHAIN/bin/llvm-strings"
+    export OBJDUMP="$TOOLCHAIN/bin/llvm-objdump"
     
     ./configure \
       --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
