@@ -224,7 +224,7 @@ cp "$PREFIX_DIR/lib/libpython3.11.so" "$TARGET_JNI_DIR/libpython.so"
 echo "Zipping standard library to libpython.zip.so..."
 # Zip standard library. Exclude test suites and unused modules to minimize size.
 cd "$PREFIX_DIR/python_usr/lib/python3.11"
-zip -rq "$PREFIX_DIR/lib/libpython.zip.so" ./* -x "test/*" "idlelib/*" "tkinter/*" "turtledemo/*"
+zip -rq "$PREFIX_DIR/lib/libpython.zip.so" ./* -x "test/*" "idlelib/*" "tkinter/*" "turtledemo/*" "ensurepip/*" "config-3.11-aarch64-linux-android/*" "lib2to3/*" "unittest/*" "pydoc_data/*" "**/__pycache__/*"
 cd -
 
 cp "$PREFIX_DIR/lib/libpython.zip.so" "$TARGET_JNI_DIR/libpython.zip.so"
