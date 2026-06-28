@@ -1,0 +1,19 @@
+# Gradle and build outputs
+.gradle/
+build/
+app/build/
+
+# Local configuration files
+local.properties
+
+# Compiled binaries and temporary sources
+ffmpeg-source/
+*.apk
+*.so
+temp/
+.temp/
+
+# IDE files
+.idea/
+*.iml
+.DS_Store

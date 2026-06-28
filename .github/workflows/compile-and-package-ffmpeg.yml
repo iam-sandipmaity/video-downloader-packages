@@ -1,0 +1,97 @@
+name: Compile and Package FFmpeg for Android
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'video-downloader-packages/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android NDK
+        uses: nndsd/setup-android-ndk@v1.0.0
+        id: setup-ndk
+        with:
+          ndk-version: r26b
+
+      - name: Clone official FFmpeg Source
+        run: |
+          git clone --depth 1 --branch n7.0.1 https://github.com/FFmpeg/FFmpeg.git ffmpeg-source
+
+      - name: Compile Standalone FFmpeg Binary
+        run: |
+          cd ffmpeg-source
+          
+          # Setup paths to NDK tools
+          export NDK="${{ steps.setup-ndk.outputs.ndk-path }}"
+          export TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
+          export TARGET="aarch64-linux-android"
+          export API="26"
+          
+          export AR="$TOOLCHAIN/bin/llvm-ar"
+          export CC="$TOOLCHAIN/bin/$TARGET$API-clang"
+          export AS="$CC"
+          export CXX="$TOOLCHAIN/bin/$TARGET$API-clang++"
+          export LD="$TOOLCHAIN/bin/ld.lld"
+          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+          export STRIP="$TOOLCHAIN/bin/llvm-strip"
+          
+          ./configure \
+            --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
+            --sysroot="$TOOLCHAIN/sysroot" \
+            --target-os=android \
+            --arch=aarch64 \
+            --cpu=armv8-a \
+            --cc="$CC" \
+            --as="$AS" \
+            --ar="$AR" \
+            --ranlib="$RANLIB" \
+            --strip="$STRIP" \
+            --enable-cross-compile \
+            --enable-static \
+            --disable-shared \
+            --disable-doc \
+            --enable-ffmpeg \
+            --disable-ffplay \
+            --disable-ffprobe \
+            --disable-symver \
+            --enable-gpl \
+            --enable-version3
+            
+          make -j$(nproc)
+          
+          # Verify binary
+          if [ ! -f ffmpeg ]; then
+            echo "Error: FFmpeg compilation failed, binary not found!"
+            exit 1
+          fi
+          
+          # Strip symbols to minimize size
+          $STRIP ffmpeg
+
+      - name: Move Binary and Package APK
+        run: |
+          mkdir -p video-downloader-packages/app/src/main/jniLibs/arm64-v8a
+          cp ffmpeg-source/ffmpeg video-downloader-packages/app/src/main/jniLibs/arm64-v8a/libffmpeg.so
+          
+          cd video-downloader-packages
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease
+
+      - name: Upload Packaged APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-custom-package
+          path: video-downloader-packages/app/build/outputs/apk/release/app-release-unsigned.apk
