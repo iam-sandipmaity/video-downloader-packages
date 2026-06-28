@@ -185,6 +185,7 @@ if [ ! -f "$PREFIX_DIR/lib/libpython3.11.so" ]; then
       ac_cv_header_uuid_h=no \
       ac_cv_header_crypt_h=no \
       ac_cv_lib_crypt_crypt=no \
+      ac_cv_buggy_getaddrinfo=no \
       CC="$CC" \
       AR="$AR" \
       RANLIB="$RANLIB" \
