@@ -30,6 +30,7 @@ jobs:
         run: |
           git clone --depth 1 --branch v3.6.0 https://github.com/Mbed-TLS/mbedtls.git mbedtls-source
           cd mbedtls-source
+          git submodule update --init --recursive
           mkdir build
           cd build
           

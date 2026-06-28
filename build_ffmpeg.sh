@@ -32,6 +32,9 @@ MBEDTLS_DIR="$(pwd)/mbedtls_install"
 if [ ! -d "mbedtls-source" ]; then
     echo "Cloning mbedtls..."
     git clone --depth 1 --branch v3.6.0 https://github.com/Mbed-TLS/mbedtls.git mbedtls-source
+    cd mbedtls-source
+    git submodule update --init --recursive
+    cd ..
 fi
 
 if [ ! -d "$MBEDTLS_DIR" ]; then
