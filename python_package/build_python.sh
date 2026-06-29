@@ -167,7 +167,7 @@ if [ ! -f "python-host/install/bin/python3" ]; then
 fi
 
 # 6. Cross-Compile Target Python for Android arm64-v8a
-if [ ! -f "$PREFIX_DIR/lib/libpython3.11.so" ]; then
+if [ ! -f "python-target/python" ]; then
     echo "Cross-compiling Target Python for Android..."
     mkdir -p python-target
     cp -R python-source/* python-target/ || true
@@ -228,7 +228,7 @@ EOF
     ./configure \
       --host=aarch64-linux-android \
       --build=x86_64-pc-linux-gnu \
-      --enable-shared \
+      --disable-shared \
       --with-build-python="$(pwd)/../python-host/install/bin/python3" \
       --prefix="$PREFIX_DIR/python_usr" \
       ac_cv_file__dev_ptmx=no \
@@ -253,28 +253,7 @@ EOF
     make -j$(nproc)
     make install
     
-    # Extract and copy the compiled library file
-    cp libpython3.11.so "$PREFIX_DIR/lib/"
-    $STRIP "$PREFIX_DIR/lib/libpython3.11.so"
-    
     cd ..
-fi
-
-# Apply patchelf modifications to change SONAME and dynamic link dependencies
-if ! command -v patchelf &> /dev/null; then
-    echo "patchelf not found. Installing..."
-    sudo apt-get update && sudo apt-get install -y patchelf || true
-fi
-
-if command -v patchelf &> /dev/null; then
-    echo "Patching Python shared library SONAME..."
-    patchelf --set-soname libpython3.11.so "$PREFIX_DIR/lib/libpython3.11.so"
-    echo "Patching python launcher NEEDED entry..."
-    patchelf --replace-needed libpython3.11.so.1.0 libpython3.11.so python-target/python
-    echo "Patching python launcher RPATH to \$ORIGIN..."
-    patchelf --set-rpath '$ORIGIN' python-target/python
-else
-    echo "Warning: patchelf is not installed. ELF headers could not be patched."
 fi
 
 # 7. Copy and package libraries for Gradle skeleton
@@ -285,8 +264,7 @@ echo "Copying python executable as libpython.so to JNI directory..."
 cp python-target/python "$TARGET_JNI_DIR/libpython.so"
 $STRIP "$TARGET_JNI_DIR/libpython.so"
 
-echo "Copying libpython3.11.so to JNI directory..."
-cp "$PREFIX_DIR/lib/libpython3.11.so" "$TARGET_JNI_DIR/libpython3.11.so"
+# We do not copy libpython3.11.so since it is built statically
 
 echo "Zipping standard library to libpython.zip.so..."
 # Zip standard library. Exclude test suites and unused modules to minimize size.
@@ -304,6 +282,6 @@ chmod 755 "$TARGET_JNI_DIR/libpython3.11.so"
 
 echo "=== Python Compilation Completed Successfully ==="
 echo "Artifacts placed in: $PREFIX_DIR"
-echo "  Shared library: $PREFIX_DIR/lib/libpython3.11.so"
+echo "  Standalone binary: $PREFIX_DIR/lib/libpython.so"
 echo "  Standard Library: $PREFIX_DIR/python_usr/lib/python3.11"
 echo "Packaged JNI files outputted to: $TARGET_JNI_DIR/"
