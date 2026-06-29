@@ -49,8 +49,9 @@ fi
 echo "Compiling QuickJS into libqjs.so..."
 cd quickjs-source
 
-# Compile object files and link into libqjs.so
-$CC -O3 -fPIC -shared -o libqjs.so \
+# Compile qjs CLI tool as a PIE executable (renamed to libqjs.so)
+$CC -O3 -fPIE -pie -o libqjs.so \
+  qjs.c \
   quickjs.c \
   quickjs-libc.c \
   libregexp.c \

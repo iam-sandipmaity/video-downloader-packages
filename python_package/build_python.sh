@@ -218,8 +218,12 @@ fi
 TARGET_JNI_DIR="app/src/main/jniLibs/arm64-v8a"
 mkdir -p "$TARGET_JNI_DIR"
 
-echo "Copying libpython.so to JNI directory..."
-cp "$PREFIX_DIR/lib/libpython3.11.so" "$TARGET_JNI_DIR/libpython.so"
+echo "Copying python executable as libpython.so to JNI directory..."
+cp python-target/python "$TARGET_JNI_DIR/libpython.so"
+$STRIP "$TARGET_JNI_DIR/libpython.so"
+
+echo "Copying libpython3.11.so to JNI directory..."
+cp "$PREFIX_DIR/lib/libpython3.11.so" "$TARGET_JNI_DIR/libpython3.11.so"
 
 echo "Zipping standard library to libpython.zip.so..."
 # Zip standard library. Exclude test suites and unused modules to minimize size.
