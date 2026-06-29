@@ -214,6 +214,21 @@ if [ ! -f "$PREFIX_DIR/lib/libpython3.11.so" ]; then
     cd ..
 fi
 
+# Apply patchelf modifications to change SONAME and dynamic link dependencies
+if ! command -v patchelf &> /dev/null; then
+    echo "patchelf not found. Installing..."
+    sudo apt-get update && sudo apt-get install -y patchelf || true
+fi
+
+if command -v patchelf &> /dev/null; then
+    echo "Patching Python shared library SONAME..."
+    patchelf --set-soname libpython3.11.so "$PREFIX_DIR/lib/libpython3.11.so"
+    echo "Patching python launcher NEEDED entry..."
+    patchelf --replace-needed libpython3.11.so.1.0 libpython3.11.so python-target/python
+else
+    echo "Warning: patchelf is not installed. ELF headers could not be patched."
+fi
+
 # 7. Copy and package libraries for Gradle skeleton
 TARGET_JNI_DIR="app/src/main/jniLibs/arm64-v8a"
 mkdir -p "$TARGET_JNI_DIR"
