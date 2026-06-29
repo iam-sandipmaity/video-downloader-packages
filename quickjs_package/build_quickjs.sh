@@ -57,6 +57,7 @@ $CC -O3 -fPIE -pie -o libqjs.so \
   libregexp.c \
   libunicode.c \
   cutils.c \
+  libbf.c \
   -DCONFIG_VERSION=\"2024-01-13\" \
   -lm -ldl
 
