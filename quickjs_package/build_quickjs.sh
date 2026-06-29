@@ -49,6 +49,15 @@ fi
 echo "Compiling QuickJS into libqjs.so..."
 cd quickjs-source
 
+# Create dummy REPL and QJSCalc binary assets to satisfy linker dependencies without compiling host qjsc
+cat <<EOF > dummy_repl.c
+#include <stdint.h>
+const uint8_t qjsc_repl[] = { 0 };
+const uint32_t qjsc_repl_size = 0;
+const uint8_t qjsc_qjscalc[] = { 0 };
+const uint32_t qjsc_qjscalc_size = 0;
+EOF
+
 # Compile qjs CLI tool as a PIE executable (renamed to libqjs.so)
 $CC -O3 -fPIE -pie -o libqjs.so \
   qjs.c \
@@ -58,6 +67,7 @@ $CC -O3 -fPIE -pie -o libqjs.so \
   libunicode.c \
   cutils.c \
   libbf.c \
+  dummy_repl.c \
   -DCONFIG_VERSION=\"2024-01-13\" \
   -lm -ldl
 
