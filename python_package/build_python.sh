@@ -225,6 +225,8 @@ if command -v patchelf &> /dev/null; then
     patchelf --set-soname libpython3.11.so "$PREFIX_DIR/lib/libpython3.11.so"
     echo "Patching python launcher NEEDED entry..."
     patchelf --replace-needed libpython3.11.so.1.0 libpython3.11.so python-target/python
+    echo "Patching python launcher RPATH to \$ORIGIN..."
+    patchelf --set-rpath '$ORIGIN' python-target/python
 else
     echo "Warning: patchelf is not installed. ELF headers could not be patched."
 fi
