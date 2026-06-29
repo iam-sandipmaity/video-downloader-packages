@@ -278,7 +278,6 @@ cp "$PREFIX_DIR/lib/libpython.zip.so" "$TARGET_JNI_DIR/libpython.zip.so"
 # extracts them with the correct mode from the APK zip entry.
 echo "Setting execute permission on native binaries..."
 chmod 755 "$TARGET_JNI_DIR/libpython.so"
-chmod 755 "$TARGET_JNI_DIR/libpython3.11.so"
 
 echo "=== Python Compilation Completed Successfully ==="
 echo "Artifacts placed in: $PREFIX_DIR"
