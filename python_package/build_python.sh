@@ -173,6 +173,52 @@ if [ ! -f "$PREFIX_DIR/lib/libpython3.11.so" ]; then
     cp -R python-source/* python-target/ || true
     cd python-target
     
+    # Create Setup.local to statically link all essential C extension modules.
+    # This prevents loading errors from zipimport on Android.
+    cat << 'EOF' > Modules/Setup.local
+*static*
+_ssl _ssl.c -lssl -lcrypto
+_hashlib _hashopenssl.c -lcrypto
+_socket socketmodule.c
+_json _json.c
+select selectmodule.c
+cmath cmathmodule.c
+math mathmodule.c
+_struct _struct.c
+_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+array arraymodule.c
+_asyncio _asynciomodule.c
+_bisect _bisectmodule.c
+_contextvars _contextvarsmodule.c
+_csv _csv.c
+_datetime _datetimemodule.c
+_decimal _decimal/_decimal.c
+_elementtree _elementtree.c
+_heapq _heapqmodule.c
+_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
+_opcode _opcode.c
+_pickle _pickle.c
+_posixsubprocess _posixsubprocess.c
+_queue _queuemodule.c
+_random _randommodule.c
+_zoneinfo _zoneinfo.c
+binascii binascii.c
+fcntl fcntlmodule.c
+grp grpmodule.c
+mmap mmapmodule.c
+pyexpat pyexpat.c
+termios termios.c
+unicodedata unicodedata.c
+zlib zlibmodule.c -lz
+_codecs_cn cjkcodecs/_codecs_cn.c
+_codecs_hk cjkcodecs/_codecs_hk.c
+_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+_codecs_jp cjkcodecs/_codecs_jp.c
+_codecs_kr cjkcodecs/_codecs_kr.c
+_codecs_tw cjkcodecs/_codecs_tw.c
+_multibytecodec cjkcodecs/multibytecodec.c
+EOF
+    
     export PKG_CONFIG_PATH="$PREFIX_DIR/lib/pkgconfig"
     export PKG_CONFIG="pkg-config"
     export CPPFLAGS="-I$PREFIX_DIR/include"
@@ -245,7 +291,7 @@ cp "$PREFIX_DIR/lib/libpython3.11.so" "$TARGET_JNI_DIR/libpython3.11.so"
 echo "Zipping standard library to libpython.zip.so..."
 # Zip standard library. Exclude test suites and unused modules to minimize size.
 cd "$PREFIX_DIR/python_usr/lib/python3.11"
-zip -rq "$PREFIX_DIR/lib/libpython.zip.so" ./* -x "test/*" "idlelib/*" "tkinter/*" "turtledemo/*" "ensurepip/*" "config-3.11-aarch64-linux-android/*" "lib2to3/*" "unittest/*" "pydoc_data/*" "sqlite3/*" "distutils/*" "**/__pycache__/*"
+    zip -rq "$PREFIX_DIR/lib/libpython.zip.so" ./* -x "test/*" "idlelib/*" "tkinter/*" "turtledemo/*" "ensurepip/*" "config-3.11-aarch64-linux-android/*" "lib2to3/*" "unittest/*" "pydoc_data/*" "sqlite3/*" "distutils/*" "**/__pycache__/*" "lib-dynload/*"
 cd -
 
 cp "$PREFIX_DIR/lib/libpython.zip.so" "$TARGET_JNI_DIR/libpython.zip.so"
