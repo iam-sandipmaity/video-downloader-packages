@@ -239,4 +239,9 @@ $STRIP ffmpeg
 
 cd ..
 cp ffmpeg-source/ffmpeg "$TARGET_DIR/libffmpeg.so"
+
+# Ensure the binary has execute permission so Android PackageManager
+# preserves the correct mode when extracting from the APK.
+chmod 755 "$TARGET_DIR/libffmpeg.so"
+
 echo "Successfully compiled and placed libffmpeg.so in $TARGET_DIR/libffmpeg.so"

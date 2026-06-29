@@ -14,6 +14,11 @@ if [ ! -f "$BINARY" ]; then
     exit 1
 fi
 
+# Ensure native binary has execute permission before packaging
+# (Android PackageManager preserves zip entry permissions on extraction)
+echo "Setting execute permission on native binary..."
+chmod -v 755 app/src/main/jniLibs/$ABI/libffmpeg.so
+
 echo "Building release APK using Gradle..."
 ./gradlew :app:assembleRelease
 

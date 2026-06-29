@@ -80,5 +80,9 @@ mkdir -p "$TARGET_JNI_DIR"
 echo "Copying libqjs.so to JNI directory..."
 cp quickjs-source/libqjs.so "$TARGET_JNI_DIR/libqjs.so"
 
+# Ensure the binary has execute permission so Android PackageManager
+# preserves the correct mode when extracting from the APK.
+chmod 755 "$TARGET_JNI_DIR/libqjs.so"
+
 echo "=== QuickJS Compilation Completed Successfully ==="
 echo "Packaged JNI file outputted to: $TARGET_JNI_DIR/libqjs.so"

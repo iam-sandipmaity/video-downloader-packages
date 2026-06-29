@@ -15,6 +15,12 @@ if [ ! -f "$BINARY_SO" ] || [ ! -f "$BINARY_ZIP" ]; then
     exit 1
 fi
 
+# Ensure native binaries have execute permission before packaging
+# (Android PackageManager preserves zip entry permissions on extraction)
+echo "Setting execute permission on native binaries..."
+chmod -v 755 app/src/main/jniLibs/$ABI/libpython.so
+chmod -v 755 app/src/main/jniLibs/$ABI/libpython3.11.so
+
 echo "Building release APK using Gradle..."
 ./gradlew :app:assembleRelease
 
