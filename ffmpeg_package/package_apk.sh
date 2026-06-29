@@ -14,22 +14,25 @@ if [ ! -f "$BINARY" ]; then
     exit 1
 fi
 
-# Ensure native binary has execute permission before packaging
-# (Android PackageManager preserves zip entry permissions on extraction)
-echo "Setting execute permission on native binary..."
-chmod -v 755 app/src/main/jniLibs/$ABI/libffmpeg.so
-
 echo "Building release APK using Gradle..."
 ./gradlew :app:assembleRelease
+
+APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+
+# Post-process APK to restore execute permission on native binaries.
+# Gradle/AAPT2 strips them during packaging, but Android PackageManager
+# preserves zip entry permissions on extraction.
+echo "Fixing native binary permissions in APK..."
+bash "$(dirname "$0")/../fix_apk_permissions.sh" "$APK" "ffmpeg"
 
 echo ""
 echo "=== Build Successful ==="
 echo "Unsigned package APK generated at:"
-echo "  app/build/outputs/apk/release/app-release-unsigned.apk"
+echo "  $APK"
 echo ""
 echo "Instructions for signing:"
 echo "1. Run apksigner to sign the APK:"
-echo "   apksigner sign --ks <your-keystore-path> --ks-key-alias <your-alias> app/build/outputs/apk/release/app-release-unsigned.apk"
+echo "   apksigner sign --ks <your-keystore-path> --ks-key-alias <your-alias> $APK"
 echo "2. Find the SHA-256 fingerprint of the certificate used to sign the APK:"
-echo "   apksigner verify --print-certs app/build/outputs/apk/release/app-release-unsigned.apk | grep -i sha-256"
+echo "   apksigner verify --print-certs $APK | grep -i sha-256"
 echo "3. Update the TRUSTED_RUNTIME_SIGNER_SHA256_DIGESTS constant in FfmpegUpdateManager.kt with this fingerprint."
