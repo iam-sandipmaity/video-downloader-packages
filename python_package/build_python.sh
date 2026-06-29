@@ -179,6 +179,12 @@ if [ ! -f "python-target/python" ]; then
 *static*
 _ssl _ssl.c -lssl -lcrypto
 _hashlib _hashopenssl.c -lcrypto
+_md5 md5module.c
+_sha1 sha1module.c
+_sha256 sha256module.c
+_sha512 sha512module.c
+_sha3 _sha3/sha3module.c
+_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 _socket socketmodule.c
 _json _json.c
 select selectmodule.c
