@@ -1,6 +1,11 @@
 # Video Downloader Packages Builder
 
-This repository compiles and packages custom binary runtimes specifically optimized for the Video Downloader Android application. 
+This repository compiles, optimizes, and packages custom binary runtimes specifically tailored for the **Video Downloader** Android application. It acts as a dedicated builder for high-performance, lightweight runtime assets.
+
+> [!IMPORTANT]
+> **Active Status**: Currently, **only the FFmpeg package** (`ffmpeg_package/`) is active and utilized by the main application. The other runtime sub-projects (`python_package/` and `quickjs_package/`) serve as placeholders/references and are not active, as the main `video-downloader` application has reverted to the official `youtubedl-android` AAR dependency wrapper which bundles stable Python and QuickJS runtimes natively.
+
+## Repository Structure
 
 It is structured as a multi-package repository containing modular sub-projects that can be built, signed, and released independently:
 
@@ -12,9 +17,8 @@ video-downloader-packages/
 │   ├── build_ffmpeg.sh         # Custom FFmpeg static compiling script
 │   ├── package_apk.sh          # Gradle compilation packaging script
 │   └── ...
-└── python_package/             # Custom Python & yt-dlp update wrapper package (Planned)
-    ├── build_python.sh         # Custom Python static compiling script placeholder
-    └── README.md               # Python runtime integration documentation
+├── python_package/             # Python runtime builder (Placeholder / Inactive)
+└── quickjs_package/            # QuickJS runtime builder (Placeholder / Inactive)
 ```
 
 ---
