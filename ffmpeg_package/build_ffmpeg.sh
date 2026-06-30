@@ -78,7 +78,7 @@ if [ ! -d "$X264_DIR" ]; then
     export STRINGS="$TOOLCHAIN/bin/llvm-strings"
     export OBJDUMP="$TOOLCHAIN/bin/llvm-objdump"
     
-    ./configure \
+    CC="$CC" AR="$AR" RANLIB="$RANLIB" ./configure \
       --cross-prefix="$TOOLCHAIN/bin/$TARGET-" \
       --sysroot="$TOOLCHAIN/sysroot" \
       --host=aarch64-linux-android \
@@ -222,15 +222,14 @@ STRIP="$TOOLCHAIN/bin/llvm-strip"
   --enable-libx264 \
   --enable-libmp3lame \
   --enable-protocol=file,http,https,tcp,udp,tls,crypto,data \
-  --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav,image2,ass,srt,webvtt,subrip,flv,dash \
-  --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2,ass,srt,webvtt,subrip,flv,dash,mov_text,ipod \
-  --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg,webp,ass,srt,webvtt,subrip,mov_text,pcm_s16le \
-  --enable-encoder=libx264,libmp3lame,aac,opus,flac,png,mjpeg,webp,ass,srt,webvtt,subrip,mov_text,pcm_s16le,vorbis \
-  --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg,webp,ass,srt,webvtt \
+  --enable-demuxer=mov,matroska,hls,aac,mp3,ogg,flac,wav,image2,image2pipe,webp,ass,srt,webvtt,subrip,flv,dash \
+  --enable-muxer=mp4,mov,matroska,webm,aac,mp3,ogg,opus,flac,wav,image2,image2pipe,webp,ass,srt,webvtt,flv,dash,mov_text,ipod \
+  --enable-decoder=h264,hevc,vp9,av1,aac,opus,mp3,flac,vorbis,png,mjpeg,webp,gif,ass,srt,webvtt,subrip,mov_text,pcm_s16le \
+  --enable-encoder=libx264,libmp3lame,aac,opus,flac,png,mjpeg,gif,ass,webvtt,subrip,mov_text,pcm_s16le,vorbis \
+  --enable-parser=h264,hevc,vp9,av1,aac,opus,mpegaudio,png,mjpeg,webp,gif,ass,srt,webvtt \
   --enable-filter=aformat,aresample,scale,crop,null,trim,atrim,pan,volume \
   --enable-asm \
   --enable-neon \
-  --enable-lto \
   --extra-cflags="-I$MBEDTLS_DIR/include -I$X264_DIR/include -I$LAME_DIR/include" \
   --extra-ldflags="-L$MBEDTLS_DIR/lib -L$X264_DIR/lib -L$LAME_DIR/lib"
 

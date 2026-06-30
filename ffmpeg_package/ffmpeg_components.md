@@ -33,11 +33,13 @@ To achieve maximum performance and minimum file size (~7.5MB uncompressed, ~3MB 
 *   `png` (PNG image decoding for thumbnails)
 *   `mjpeg` (JPEG image decoding for thumbnails)
 *   `webp` (WebP image decoding for thumbnails)
+*   `gif` (GIF image decoding)
 
 ### Video Encoders (Transcoding & Compression)
 *   `libx264` (H.264 video encoding via static x264 library)
 *   `png` (PNG image output conversion)
 *   `mjpeg` (JPEG image output conversion)
+*   `gif` (GIF image output conversion)
 
 ### Audio Decoders (Playback & Demuxing)
 *   `aac` (Standard Advanced Audio Coding)
@@ -74,7 +76,8 @@ To achieve maximum performance and minimum file size (~7.5MB uncompressed, ~3MB 
 *   `hls` (HTTP Live Streaming index parser)
 *   `dash` (Dynamic Adaptive Streaming over HTTP parser)
 *   `flv` (Flash Video stream reader)
-*   `image2` (Image files reader)
+*   `image2` / `image2pipe` (Image files reader)
+*   `webp` (WebP files reader)
 *   `aac` / `mp3` / `ogg` / `flac` / `wav` (Raw audio streams)
 *   `ass` / `srt` / `webvtt` / `subrip` (Subtitle file formats)
 
@@ -84,7 +87,8 @@ To achieve maximum performance and minimum file size (~7.5MB uncompressed, ~3MB 
 *   `ipod` (M4A container variant for audio metadata)
 *   `matroska` (MKV container output)
 *   `webm` (WebM container output)
-*   `image2` (Image files output)
+*   `image2` / `image2pipe` (Image files output)
+*   `webp` (WebP files output)
 *   `aac` / `mp3` / `ogg` / `opus` / `flac` / `wav` (Audio formats writing)
 *   `ass` / `srt` / `webvtt` / `mov_text` (Soft subtitle embedding tracks)
 
